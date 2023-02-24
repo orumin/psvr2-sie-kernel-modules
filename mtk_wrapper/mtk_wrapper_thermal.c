@@ -126,6 +126,7 @@ struct mtk_thermal {
 	struct clk *clk_auxadc;
 	/* lock: for getting and putting banks */
 	struct mutex lock;
+	u64 probe_time;
 
 	/* Calibration values */
 	s32 adc_ge;
@@ -635,9 +636,23 @@ static struct class   *wrapper_thermal_cls;
 /* for ioctl */
 static int open_thermal(struct inode *inode, struct file *file)
 {
+	u64 diff;
+	struct mtk_thermal *mt;
+
 	pr_debug("open thermal wrapper device");
+
 	/* pr_info("major:%d, minor:%d", MAJOR(inode->i_rdev), MINOR(inode->i_rdev)); */
-	file->private_data = (void *)dev_get_drvdata(wrapper_thermal_dev);
+	mt = (void *)dev_get_drvdata(wrapper_thermal_dev);
+	file->private_data = (void *)mt;
+
+	diff = (local_clock() - mt->probe_time) / NSEC_PER_MSEC;
+	if (diff < 100) { // Need to sleep 100ms from device_reset() in probe.
+		diff = 100 - diff;
+		pr_info("%s: sleep %llums\n", __func__, diff);
+		usleep_range(diff * USEC_PER_MSEC, (diff + 1) * USEC_PER_MSEC);
+	} else {
+		pr_info("%s: No sleep(%llums from probe.)\n", __func__, diff);
+	}
 
 	return 0;
 }
@@ -879,7 +894,8 @@ static int mtk_thermal_probe(struct platform_device *pdev)
 		mtk_thermal_init_bank(mt, i, apmixed_phys_base,
 				      auxadc_phys_base);
 
-	msleep(100);
+	mt->probe_time = local_clock();
+
 	platform_set_drvdata(pdev, mt);
 
 	/* get driver number */

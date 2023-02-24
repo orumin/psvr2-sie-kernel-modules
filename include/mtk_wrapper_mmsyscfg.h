@@ -64,7 +64,7 @@ typedef struct _args_mmsyscfg_lhc_swap_config {
 
 #define MMSYSCFG_CONNECT_COMPONENT _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 1, args_mmsyscfg_connect_component)
 #define MMSYSCFG_DISCONNECT_COMPONENT _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 2, args_mmsyscfg_connect_component)
-#define MMSYSCFG_RESET_MODULE      _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 3, DISPLAY_COMPONENT)
+#define MMSYSCFG_RESET_MODULE      _IO(MMSYSCFG_DEVICE_IOC_TYPE, 3)
 #define MMSYSCFG_CAMERA_SYNC_CLOCK_SEL _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 4, bool)
 #define MMSYSCFG_CAMERA_SYNC_CONFIG _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 5, args_mmsyscfg_camera_sync_config)
 #define MMSYSCFG_CAMERA_SYNC_FRC    _IOW(MMSYSCFG_DEVICE_IOC_TYPE, 6, args_mmsyscfg_camera_sync_frc)

@@ -141,6 +141,11 @@ static int mtk_wrapper_dscenc_power_on(void)
 	return dsc_power_on(s_dscenc);
 }
 
+static int mtk_wrapper_dscenc_power_off(void)
+{
+	return dsc_power_off(s_dscenc);
+}
+
 static int mtk_wrapper_dscenc_start(void)
 {
 	return dsc_start(s_dscenc, NULL);
@@ -163,6 +168,9 @@ static long mtk_wrapper_dscenc_ioctl(struct file *file, unsigned int cmd, unsign
 	switch (cmd) {
 	case DSCENC_POWER_ON:
 		ret = mtk_wrapper_dscenc_power_on();
+		break;
+	case DSCENC_POWER_OFF:
+		ret = mtk_wrapper_dscenc_power_off();
 		break;
 	case DSCENC_INIT_HW:
 		ret = mtk_wrapper_dscenc_set_config((void *)arg);

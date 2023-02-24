@@ -340,17 +340,13 @@ static int mtk_wrapper_rdma_open(struct inode *inode, struct file *file)
 		return -ENOMEM;
 	}
 	rdma_info->id = minor;
-	if (minor == RDMA1) {
-		/* pvric always power on */
-		rdma_info->dev = s_pvric_rdma;
-	} else {
-		ret = mtk_wrapper_display_pipe_probe("mediatek,rdma", minor, &rdma_info->dev);
-		if (ret < 0) {
-			pr_err("can't find display_pipe rdma(%d)\n", minor);
-			kfree(rdma_info);
-			return ret;
-		}
+	ret = mtk_wrapper_display_pipe_probe("mediatek,rdma", minor, &rdma_info->dev);
+	if (ret < 0) {
+		pr_err("can't find display_pipe rdma(%d)\n", minor);
+		kfree(rdma_info);
+		return ret;
 	}
+
 	if (minor == RDMA0) {
 		ret = mtk_wrapper_display_pipe_probe("mediatek,rbfc", 0, &rdma_info->rbfc);
 		if (ret < 0) {
@@ -426,11 +422,6 @@ int init_module_mtk_wrapper_rdma(void)
 	ret = mtk_wrapper_display_pipe_probe("mediatek,rdma", 1, &s_pvric_rdma);
 	if (ret < 0) {
 		pr_err("can't find display_pipe rdma-pvric\n");
-		return ret;
-	}
-	/* pvric always power on */
-	ret = mtk_rdma_power_on(s_pvric_rdma);
-	if (ret < 0) {
 		return ret;
 	}
 

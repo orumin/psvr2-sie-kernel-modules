@@ -194,8 +194,11 @@ static int setup_device(struct icm426 *icm426)
 
 	/* Enable accel and gyro in low noise mode */
 	ret |= write_reg(icm426, ICM426_REG_PWR_MGMT_0, BIT_GYRO_MODE_LNM | BIT_ACCEL_MODE_LNM); /* 0x4E */
-	msleep((INV_ICM42600_ACCEL_START_TIME > INV_ICM42600_GYRO_START_TIME) ?
-		   INV_ICM42600_ACCEL_START_TIME : INV_ICM42600_GYRO_START_TIME);
+	{
+		unsigned long start_time = (INV_ICM42600_ACCEL_START_TIME > INV_ICM42600_GYRO_START_TIME) ?
+			INV_ICM42600_ACCEL_START_TIME : INV_ICM42600_GYRO_START_TIME;
+		usleep_range(start_time * 1000, start_time * 1000 + 100);
+	}
 
 	/* reset_fifo */
 	ret |= write_reg(icm426, ICM426_REG_SIGNAL_PATH_RESET, BIT_FIFO_FLUSH); /* 0x4B */

@@ -161,7 +161,7 @@ static int mtk_wrapper_dsi_wait_ddds_lock(void *user)
 		if (!lock_result) {
 			if (i < args.count) {
 				i++;
-				msleep(args.interval);
+				usleep_range(args.interval * 1000, (args.interval * 1000) + 100);
 				continue;
 			} else {
 				pr_debug("%s ddds can't lock within %d ms\n",
@@ -188,6 +188,7 @@ static int mtk_wrapper_dsi_config_frmtrk(void *user)
 		return -EFAULT;
 	}
 
+	mtk_frmtrk_config_vtotal(s_frmtrk, args.lcm_vttl, NULL);
 	mtk_frmtrk_target_line(s_frmtrk, args.target_line, NULL);
 	mtk_frmtrk_lock_window(s_frmtrk, args.lock_win, NULL);
 	mtk_frmtrk_turbo_window(s_frmtrk, args.turbo_win, NULL);
@@ -207,6 +208,7 @@ static int mtk_wrapper_dsi_disable_ddds(void)
 static int mtk_wrapper_dsi_disable_frmtrk(void)
 {
 	mtk_frmtrk_stop(s_frmtrk);
+	mtk_frmtrk_set_mask(s_frmtrk, 1, 0, NULL);
 	return 0;
 }
 
@@ -264,7 +266,7 @@ static int mtk_wrapper_dsi_wait_frmtrk_lock(void *user)
 						i, dist);
 				}
 				i++;
-				msleep(args.interval);
+				usleep_range(args.interval * 1000, (args.interval * 1000) + 100);
 				continue;
 			} else {
 				mtk_frmtrk_get_trk_dist(s_frmtrk, &dist);
@@ -281,20 +283,31 @@ static int mtk_wrapper_dsi_wait_frmtrk_lock(void *user)
 	}
 }
 
-static int mtk_wrapper_dsi_start_output(MTK_WRAPPER_DSI_WAIT wait)
+static int mtk_wrapper_dsi_start_output(void *user)
 {
 	struct cmdq_pkt *pkt;
 	u32 event;
+	args_dsi_start_param args;
+	int ret;
 
-	if (wait == MTK_WRAPPER_DSI_NO_WAIT) {
+	ret = copy_from_user(&args, user, sizeof(args_dsi_start_param));
+	if (ret != 0) {
+		return -EFAULT;
+	}
+
+	if (args.wait == MTK_WRAPPER_DSI_NO_WAIT) {
 		return mtk_dsi_output_start(s_dsi, NULL);
 	}
 
-	if (wait == MTK_WRAPPER_DSI_WAIT_SLICER_0) {
+	if (args.wait == MTK_WRAPPER_DSI_WAIT_SLICER_0) {
 		event = CMDQ_EVENT_MMSYS_CORE_SLICER_EVENT_0;
-	} else if (wait == MTK_WRAPPER_DSI_WAIT_SLICER_1) {
+	} else if (args.wait == MTK_WRAPPER_DSI_WAIT_SLICER_1) {
 		event = CMDQ_EVENT_MMSYS_CORE_SLICER_EVENT_1;
 	} else {
+		return -EINVAL;
+	}
+
+	if (args.mask < 1) {
 		return -EINVAL;
 	}
 
@@ -302,7 +315,7 @@ static int mtk_wrapper_dsi_start_output(MTK_WRAPPER_DSI_WAIT wait)
 	cmdq_pkt_clear_event(pkt, event);
 	cmdq_pkt_wfe(pkt, event);
 	mtk_dsi_output_start(s_dsi, pkt);
-	mtk_frmtrk_set_mask(s_frmtrk, 1, 0, pkt);
+	mtk_frmtrk_set_mask(s_frmtrk, args.mask, args.mask-1, pkt);
 	mtk_frmtrk_start(s_frmtrk, pkt);
 	cmdq_pkt_flush(s_cmdq_client, pkt);
 	cmdq_pkt_destroy(pkt);
@@ -516,6 +529,33 @@ static int mtk_wrapper_dsi_update_hbrank_reg(void *user)
 	return ret;
 }
 
+static int mtk_wrapper_dsi_init_state_check(void *user)
+{
+	int ret;
+	int i = 0;
+	u32 target;
+
+	args_dsi_init_state_check args;
+
+	ret = copy_from_user(&args, user, sizeof(args_dsi_init_state_check));
+	if (ret != 0) {
+		return -EFAULT;
+	}
+
+	while (1) {
+		mtk_frmtrk_get_trk_dist(s_frmtrk, &target);
+		if (i < 50) {
+			if (target == args.target_line) {
+				return 0;
+			}
+			usleep_range(20*1000, 21*1000);
+			i++;
+		}
+	}
+	return -ETIMEDOUT;
+}
+
+
 static int mtk_wrapper_dsi_finit(void)
 {
 	return mtk_dsi_hw_fini(s_dsi);
@@ -551,7 +591,7 @@ static long mtk_wrapper_dsi_ioctl(struct file *file, unsigned int cmd, unsigned 
 		ret = mtk_wrapper_dsi_set_sw_mute((void *)arg);
 		break;
 	case DSI_START_OUTPUT:
-		ret = mtk_wrapper_dsi_start_output((MTK_WRAPPER_DSI_WAIT)arg);
+		ret = mtk_wrapper_dsi_start_output((void *)arg);
 		break;
 	case DSI_STOP_OUTPUT:
 		ret = mtk_wrapper_dsi_stop_output();
@@ -588,6 +628,9 @@ static long mtk_wrapper_dsi_ioctl(struct file *file, unsigned int cmd, unsigned 
 		break;
 	case DSI_WAIT_FRMTRK_LOCK:
 		ret = mtk_wrapper_dsi_wait_frmtrk_lock((void *)arg);
+		break;
+	case DSI_INIT_STATE_CHECK:
+		ret = mtk_wrapper_dsi_init_state_check((void *)arg);
 		break;
 	case DSI_FINIT:
 		ret = mtk_wrapper_dsi_finit();

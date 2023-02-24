@@ -464,20 +464,33 @@ static int mtk_wrapper_mmsyscfg_lhc_swap_cfg(void *user)
 	return ret;
 }
 
-static int mtk_wrapper_mmsyscfg_reset(DISPLAY_COMPONENT comp)
-{
-	enum mtk_mmsys_config_comp_id id;
+static int mtk_wrapper_mmsyscfg_modules_reset(enum mtk_mmsys_config_comp_id id, int num) {
 	int i;
 	int ret = 0;
-
-	if (comp != DISPLAY_COMPONENT_DISP_RDMA) {
-		return -EINVAL;
+	for (i = 0; i < num; i++) {
+		ret |= mtk_mmsys_cfg_reset_module(s_mmsyscfg_dev, NULL, id+i);
 	}
+	return ret;
+}
 
-	id = convert_display_component_to_comp_id(comp);
-	for (i = 0; i < 4; i++) {
-		ret |= mtk_mmsys_cfg_reset_module(s_mmsyscfg_dev, NULL, id + i);
-	}
+static int mtk_wrapper_mmsyscfg_reset(void)
+{
+	int ret = 0;
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_MUTEX, 1);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_SLCR_MOUT0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_SLICER_MM, 3);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_RBFC0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_MDP_RDMA0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_MDP_RDMA_PVRIC0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DISP_RDMA0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_RDMA_MOUT0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_LHC_SWAP, 1);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_LHC0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DSC0, 2);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DSC_MOUT0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DISP_WDMA0, 4);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DSI_LANE_SWAP, 1);
+	ret |= mtk_wrapper_mmsyscfg_modules_reset(MMSYSCFG_COMPONENT_DSI0, 4);
 	return ret;
 }
 
@@ -498,7 +511,7 @@ static long mtk_wrapper_mmsys_ioctl(struct file *file, unsigned int cmd, unsigne
 		ret = mtk_wrapper_mmsyscfg_disconnect_component((void *)arg);
 		break;
 	case MMSYSCFG_RESET_MODULE:
-		ret = mtk_wrapper_mmsyscfg_reset((DISPLAY_COMPONENT)arg);
+		ret = mtk_wrapper_mmsyscfg_reset();
 		break;
 	case MMSYSCFG_CAMERA_SYNC_CLOCK_SEL:
 		ret = mtk_wrapper_mmsyscfg_camera_sync_clock_sel((bool)arg);

@@ -64,11 +64,17 @@ typedef struct _args_dsi_config_frmtrk {
 	__u16 target_line;
 	__u8  lock_win;
 	__u16 turbo_win;
+	__u16 lcm_vttl;
 } args_dsi_config_frmtrk;
 
 typedef struct _args_dsi_set_sw_mute {
 	bool mute;
 } args_dsi_set_sw_mute;
+
+typedef struct _args_dsi_start_param {
+	MTK_WRAPPER_DSI_WAIT wait;
+	__u32 mask;
+} args_dsi_start_param;
 
 typedef struct _args_dsi_set_panel_param {
 	__u32 hactive;
@@ -111,6 +117,10 @@ typedef struct _args_dsi_polling {
 	__u16 count;
 } args_dsi_polling;
 
+typedef struct _args_dsi_init_state_check {
+	__u32 target_line;
+} args_dsi_init_state_check;
+
 #define PANEL_ID_SIZE (11)
 
 struct dsi_panel_id {
@@ -128,7 +138,7 @@ struct dsi_panel_err {
 #define DSI_ENABLE_DDDS       _IOW(DSI_DEVICE_IOC_TYPE, 3, args_dsi_enable_ddds)
 #define DSI_DISABLE_DDDS      _IO(DSI_DEVICE_IOC_TYPE, 4)
 #define DSI_SET_SW_MUTE       _IOW(DSI_DEVICE_IOC_TYPE, 6, bool)
-#define DSI_START_OUTPUT      _IOW(DSI_DEVICE_IOC_TYPE, 7, MTK_WRAPPER_DSI_WAIT)
+#define DSI_START_OUTPUT      _IOW(DSI_DEVICE_IOC_TYPE, 7, args_dsi_start_param)
 #define DSI_STOP_OUTPUT       _IO(DSI_DEVICE_IOC_TYPE,  8)
 #define DSI_RESET             _IO(DSI_DEVICE_IOC_TYPE,  10)
 #define DSI_GET_FPS           _IO(DSI_DEVICE_IOC_TYPE,  11)
@@ -145,5 +155,6 @@ struct dsi_panel_err {
 #define DSI_WAIT_FRMTRK_LOCK  _IOW(DSI_DEVICE_IOC_TYPE, 22, args_dsi_polling)
 #define DSI_FINIT             _IO(DSI_DEVICE_IOC_TYPE, 23)
 #define DSI_LANE_SWAP         _IOW(DSI_DEVICE_IOC_TYPE, 24, __u8)
+#define DSI_INIT_STATE_CHECK  _IOW(DSI_DEVICE_IOC_TYPE, 25, args_dsi_init_state_check)
 
 #endif /* _MTK_WRAPPER_DSI_ */

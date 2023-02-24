@@ -468,8 +468,9 @@ static int usb_auth_set_auth1_data(struct usb_request *req, struct usb_auth_inte
 
 	spin_lock_irqsave(&auth->lock, flags);
 
-	if ((auth->status != AUTH_STATUS_WAIT_H_1ST_CHALLENGE) && (auth->status != AUTH_STATUS_AUTHENTICATE_OK) &&
-		(auth->status != AUTH_STATUS_ERROR_AUTHENTICATE)) {
+	if ((auth->status != AUTH_STATUS_WAIT_H_1ST_CHALLENGE) && (auth->status != AUTH_STATUS_WAIT_H_RESPONSE) &&
+		(auth->status != AUTH_STATUS_READY_D_RESPONSE) &&
+		(auth->status != AUTH_STATUS_AUTHENTICATE_OK) && (auth->status != AUTH_STATUS_ERROR_AUTHENTICATE)) {
 		GADGET_AUTH_LOG(LOG_ERR, "Invalid request. State error. current=0x%02x.\n", auth->status);
 		ret = AUTH_ERROR_INVALID_REQUEST;
 		goto cleanup;

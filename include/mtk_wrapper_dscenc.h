@@ -64,5 +64,6 @@ typedef struct _args_dsc_init_hw {
 #define DSCENC_START        _IO(DSCENC_DEVICE_IOC_TYPE, 3)
 #define DSCENC_RESET        _IO(DSCENC_DEVICE_IOC_TYPE, 4)
 #define DSCENC_RELAY        _IO(DSCENC_DEVICE_IOC_TYPE, 5)
+#define DSCENC_POWER_OFF    _IO(DSCENC_DEVICE_IOC_TYPE, 6)
 
 #endif /* _MTK_WRAPPER_DSCENC_*/

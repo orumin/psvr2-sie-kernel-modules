@@ -822,6 +822,13 @@ static int mtk_warpa_fe_trigger_thread(void *arg)
 
 	CHK_ERR(mtk_warpa_fe_module_set_buf(warpa_fe, warpa_fe->current_buf_index));
 
+#ifdef CONFIG_SIE_DEVELOP_BUILD
+	if (warpa_fe->cmdq_pkt) {
+		BUG_ON(1);
+	}
+#endif
+	cmdq_pkt_create(&warpa_fe->cmdq_pkt);
+
 	while (!kthread_should_stop()) {
 		if (!(warpa_fe->warpafemask & WARPA_FE_AUTO_NEXT_TRIGGER)) {
 			ret = wait_event_interruptible_timeout(warpa_fe->trigger_wait_queue, warpa_fe->trigger_buf_index < TRIGGER_THREAD_WAIT, WARPA_FE_TIMEOUT);
@@ -845,12 +852,7 @@ static int mtk_warpa_fe_trigger_thread(void *arg)
 
 		start_time = ktime_get_ns();
 		do {
-#ifdef CONFIG_SIE_DEVELOP_BUILD
-			if (warpa_fe->cmdq_pkt) {
-				BUG_ON(1);
-			}
-#endif
-			cmdq_pkt_create(&warpa_fe->cmdq_pkt);
+			cmdq_pkt_multiple_reset(&warpa_fe->cmdq_pkt, 1);
 			if (warpa_fe->warpafemask & WARPA_FE_KICK_AFTER_P2_DONE) {
 				cmdq_pkt_wfe(warpa_fe->cmdq_pkt, wait_before_start_event);
 			}
@@ -887,9 +889,6 @@ static int mtk_warpa_fe_trigger_thread(void *arg)
 				dev_err(warpa_fe->dev, "%s: cmdq_pkt_flush(Wait Event) fail. ret:%d\n", __func__, ret);
 				warpa_fe->cmdq_err++;
 			}
-			cmdq_pkt_destroy(warpa_fe->cmdq_pkt);
-			warpa_fe->cmdq_pkt = NULL;
-
 
 			if (mtk_warpa_get_wpe_done(warpa_fe->dev_warpa)) {
 				break;
@@ -915,6 +914,9 @@ static int mtk_warpa_fe_trigger_thread(void *arg)
 		}
 		wake_up_interruptible(&warpa_fe->trigger_wait_queue);
 	}
+
+	cmdq_pkt_destroy(warpa_fe->cmdq_pkt);
+	warpa_fe->cmdq_pkt = NULL;
 
 	pr_info("%s exit.\n", __func__);
 	return 0;

@@ -165,6 +165,7 @@ static int mtk_wrapper_wdma_stop(void *user)
 	}
 
 	for (i = 0; i < s_wdma_dev_info.active_num; i++) {
+		ret |= mtk_wdma_reset(s_wdma_dev_info.dev[i]);
 		ret |= mtk_wdma_stop(s_wdma_dev_info.dev[i], NULL);
 	}
 	return ret;
